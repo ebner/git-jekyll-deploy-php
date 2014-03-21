@@ -31,8 +31,11 @@ define('SOURCE_REPOSITORY', 'git@bitbucket.org:org/repo.git');
 // which directory to deploy to
 define('DEPLOY_TARGET', '/var/www/site/');
 
-// a directory use to cache git clones, to avoid a full clone on every commit
-define('LOCAL_CACHE', '/srv/git-mirror-cache/repo');
+// a directory to to clone to, will be removed after deployment
+define('LOCAL_CACHE', '/tmp/gjds-'.md5(REMOTE_REPOSITORY).'/');
+
+// which branch to deploy
+define('BRANCH', 'deploy');
 
 // Time limit in seconds for each command
 if (!defined('TIME_LIMIT')) define('TIME_LIMIT', 60);
@@ -53,13 +56,24 @@ if (!isset($_GET['token']) || $_GET['token'] !== ACCESS_TOKEN) {
 
 <pre>
 <?php
+
+putenv('LANG=en_US.UTF-8');
+
 $commands = array();
 
-// clone the repository into the LOCAL_CACHE
-$commands[] = sprintf('git clone %s %s', SOURCE_REPOSITORY, LOCAL_CACHE);
+if (!is_dir(sprintf('%s/%s', LOCAL_CACHE, '.git'))) {
+	// clone the repository into the LOCAL_CACHE
+	$commands[] = sprintf('git clone --depth=1 --branch %s %s %s', BRANCH, SOURCE_REPOSITORY, LOCAL_CACHE);
+} else {
+	// fetch updates to previously cloned LOCAL_CACHE
+	$commands[] = sprintf('git  --git-dir="%s.git" --work-tree="%s" fetch origin %s', LOCAL_CACHE, LOCAL_CACHE, BRANCH);
+}
 
 // use Jekyll to build and deploy to target directory
-$commands[] = sprintf('jekyll build -s %s -d %s', LOCAL_CACHE, DEPLOY_TARGET);
+$commands[] = sprintf('jekyll build --source %s --destination %s', LOCAL_CACHE, DEPLOY_TARGET);
+
+// cleanup
+$commands[] = sprintf('rm -rf %s', LOCAL_CACHE);
 
 // run commands
 foreach ($commands as $command) {
