@@ -32,7 +32,7 @@ define('SOURCE_REPOSITORY', 'git@bitbucket.org:org/repo.git');
 define('DEPLOY_TARGET', '/var/www/site/');
 
 // a directory to to clone to, will be removed after deployment
-define('LOCAL_CACHE', '/tmp/gjds-'.md5(REMOTE_REPOSITORY).'/');
+define('LOCAL_CACHE', '/tmp/gjds-'.md5(SOURCE_REPOSITORY).'/');
 
 // which branch to deploy
 define('BRANCH', 'deploy');
